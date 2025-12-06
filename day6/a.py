@@ -1,42 +1,28 @@
+import functools
 
-operation_map = {
-    '+': lambda x, y: x + y,
-    '*': lambda x, y: x * y
+apply_operation = {
+    '+': lambda args: functools.reduce(lambda x, y: x + y, args, 0),
+    '*': lambda args: functools.reduce(lambda x, y: x * y, args, 1),
 }
 
-# 64
-# 23 
-# 314
-# -> 4 + 431 + 623
-def yield_args(problem):
-    width = max([len(a) for a in problem])
-    padded_args = [a + ' ' * (width - len(a)) for a in problem]
-    for w in range(width):
-        new_arg = ''.join([d[w] for d in padded_args])
-        yield int(new_arg.strip())
-
 with open('day6/input', 'r') as input:
-    lines = [l.strip().split() for l in input.readlines()]
-    problems = [[lines[row][col] for row in range(len(lines)) ] for col in range(len(lines[0]))]
+    lines = [l.rstrip() for l in input.readlines()]
+    prob_lines = [l.strip().split() for l in lines]
+    problems = [[prob_lines[row][col] for row in range(len(prob_lines)) ] for col in range(len(prob_lines[0]))]
 
     total = 0
-
     for p in problems:
-        result = int(p[0])
-        operation = operation_map[p[-1]]
-        for arg in p[1:-1]:
-            result = operation(result, int(arg))
-        total += result
-
+        total += apply_operation[p[-1]]([int(a) for a in p[:-1]])
     print(f'total of the results of the operations is {total}')
 
-    total = 0
-    for p in problems:
-        args = list(yield_args(p[:-1]))
-        result = args[0]
-        operation = operation_map[p[-1]]
-        for arg in args:
-            result = operation(result, arg)
-        total += result        
+    # find the starting offset for each problem
+    offsets = [pos+1 for pos in range(len(lines[0])) if all([lines[c][pos] == ' ' for c in range(len(lines) - 1)])]
+    offsets = [0] + offsets + [len(lines[0]) + 1]
+    
+    total = 0        
+    for o in range(len(offsets) - 1):
+        start, end = offsets[o], offsets[o+1]
+        args = [int(''.join([lines[h][start + w] for h in range(len(lines) - 1)]).strip()) for w in range(end - start - 1)]
+        total += apply_operation[prob_lines[-1][o]](args)
 
     print(f'total of the results of the vertically-parsed operations is {total}')
